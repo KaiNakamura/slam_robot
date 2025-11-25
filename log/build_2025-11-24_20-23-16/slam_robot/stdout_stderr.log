@@ -1,0 +1,33 @@
+running egg_info
+creating build/slam_robot/slam_robot.egg-info
+writing build/slam_robot/slam_robot.egg-info/PKG-INFO
+writing dependency_links to build/slam_robot/slam_robot.egg-info/dependency_links.txt
+writing requirements to build/slam_robot/slam_robot.egg-info/requires.txt
+writing top-level names to build/slam_robot/slam_robot.egg-info/top_level.txt
+writing manifest file 'build/slam_robot/slam_robot.egg-info/SOURCES.txt'
+reading manifest file 'build/slam_robot/slam_robot.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'build/slam_robot/slam_robot.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /home/kai/ros2_ws/src/slam_robot/build/slam_robot/build
+creating /home/kai/ros2_ws/src/slam_robot/build/slam_robot/build/lib
+creating /home/kai/ros2_ws/src/slam_robot/build/slam_robot/build/lib/slam_robot
+copying slam_robot/__init__.py -> /home/kai/ros2_ws/src/slam_robot/build/slam_robot/build/lib/slam_robot
+running install
+running install_lib
+creating /home/kai/ros2_ws/src/slam_robot/install/slam_robot/lib/python3.12/site-packages/slam_robot
+copying /home/kai/ros2_ws/src/slam_robot/build/slam_robot/build/lib/slam_robot/__init__.py -> /home/kai/ros2_ws/src/slam_robot/install/slam_robot/lib/python3.12/site-packages/slam_robot
+byte-compiling /home/kai/ros2_ws/src/slam_robot/install/slam_robot/lib/python3.12/site-packages/slam_robot/__init__.py to __init__.cpython-312.pyc
+running install_data
+creating /home/kai/ros2_ws/src/slam_robot/install/slam_robot/share/ament_index
+creating /home/kai/ros2_ws/src/slam_robot/install/slam_robot/share/ament_index/resource_index
+creating /home/kai/ros2_ws/src/slam_robot/install/slam_robot/share/ament_index/resource_index/packages
+copying resource/slam_robot -> /home/kai/ros2_ws/src/slam_robot/install/slam_robot/share/ament_index/resource_index/packages
+copying package.xml -> /home/kai/ros2_ws/src/slam_robot/install/slam_robot/share/slam_robot
+creating /home/kai/ros2_ws/src/slam_robot/install/slam_robot/share/slam_robot/launch
+copying launch/bringup.launch.py -> /home/kai/ros2_ws/src/slam_robot/install/slam_robot/share/slam_robot/launch
+running install_egg_info
+Copying build/slam_robot/slam_robot.egg-info to /home/kai/ros2_ws/src/slam_robot/install/slam_robot/lib/python3.12/site-packages/slam_robot-0.0.0-py3.12.egg-info
+running install_scripts
+writing list of installed files to '/home/kai/ros2_ws/src/slam_robot/build/slam_robot/install.log'

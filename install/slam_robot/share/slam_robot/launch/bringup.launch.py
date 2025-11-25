@@ -12,7 +12,6 @@ def generate_launch_description():
     # Find packages
     turtlebot3_gazebo_pkg = FindPackageShare("turtlebot3_gazebo")
     slam_toolbox_pkg = FindPackageShare("slam_toolbox")
-    nav2_bringup_pkg = FindPackageShare("nav2_bringup")
 
     # Launch configuration
     use_sim_time = LaunchConfiguration("use_sim_time", default="true")
@@ -27,16 +26,6 @@ def generate_launch_description():
         [slam_toolbox_pkg, "launch", "online_async_launch.py"]
     )
 
-    # Nav2 navigation launch file
-    nav2_navigation_launch_file_path = PathJoinSubstitution(
-        [nav2_bringup_pkg, "launch", "navigation_launch.py"]
-    )
-
-    # Nav2 RViz launch file
-    nav2_rviz_launch_file_path = PathJoinSubstitution(
-        [nav2_bringup_pkg, "launch", "rviz_launch.py"]
-    )
-
     return LaunchDescription(
         [
             # Launch Gazebo with Turtlebot3
@@ -49,17 +38,6 @@ def generate_launch_description():
                 launch_arguments={
                     "use_sim_time": use_sim_time,
                 }.items(),
-            ),
-            # Launch Nav2 navigation
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(nav2_navigation_launch_file_path),
-                launch_arguments={
-                    "use_sim_time": use_sim_time,
-                }.items(),
-            ),
-            # Launch Nav2 RViz
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(nav2_rviz_launch_file_path)
             ),
         ]
     )
