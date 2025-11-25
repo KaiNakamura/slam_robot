@@ -6,9 +6,11 @@ An autonomous mapping robot using SLAM (Simultaneous Localization and Mapping)
 
 This repo has been tested on Ubuntu 24.04 LTS.
 
-Install [ROS2 Jazzy](https://docs.ros.org/en/jazzy/Installation.html)
-Install [Nav2 packages](https://docs.nav2.org/getting_started/index.html#installation)
-Install [slam_toolbox](https://docs.nav2.org/tutorials/docs/navigation2_with_slam.html)
+Install:
+
+- [ROS2 Jazzy](https://docs.ros.org/en/jazzy/Installation.html)
+- [Nav2 packages](https://docs.nav2.org/getting_started/index.html#installation)
+- [slam_toolbox](https://docs.nav2.org/tutorials/docs/navigation2_with_slam.html)
 
 Also:
 
