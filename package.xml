@@ -3,7 +3,7 @@
 <package format="3">
   <name>slam_robot</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>An autonomous mapping robot using SLAM (Simultaneous Localization and Mapping)</description>
   <maintainer email="kaihnakamura@gmail.com">kai</maintainer>
   <license>MIT</license>
 

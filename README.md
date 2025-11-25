@@ -1,6 +1,6 @@
 # SLAM Robot
 
-An autonomous mapping robot that uses SLAM (Simultaneous Localization and Mapping)
+An autonomous mapping robot using SLAM (Simultaneous Localization and Mapping)
 
 ## Installation
 
