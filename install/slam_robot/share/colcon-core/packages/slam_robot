@@ -1,1 +1,1 @@
-launch:launch_ros:rclpy:slam_toolbox:turtlebot3_gazebo
+launch:launch_ros:nav2_bringup:rclpy:slam_toolbox:turtlebot3_gazebo
