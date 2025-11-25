@@ -7,6 +7,11 @@
   <maintainer email="kaihnakamura@gmail.com">kai</maintainer>
   <license>MIT</license>
 
+  <depend>rclpy</depend>
+  <depend>launch</depend>
+  <depend>launch_ros</depend>
+  <exec_depend>turtlebot3_gazebo</exec_depend>
+
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
