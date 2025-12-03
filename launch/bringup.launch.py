@@ -3,6 +3,7 @@ from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
+from launch_ros.actions import Node
 
 
 def generate_launch_description():
@@ -38,6 +39,22 @@ def generate_launch_description():
         [nav2_bringup_pkg, "launch", "rviz_launch.py"]
     )
 
+    # Frontier server node
+    frontier_server_node = Node(
+        package="slam_robot",
+        executable="frontier_server",
+        name="frontier_server",
+        output="screen",
+    )
+
+    # Frontier explorer node
+    frontier_explorer_node = Node(
+        package="slam_robot",
+        executable="frontier_explorer",
+        name="frontier_explorer",
+        output="screen",
+    )
+
     return LaunchDescription(
         [
             # Launch Gazebo with Turtlebot3
@@ -68,5 +85,8 @@ def generate_launch_description():
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(nav2_rviz_launch_file_path)
             ),
+            # Frontier exploration nodes
+            frontier_server_node,
+            frontier_explorer_node,
         ]
     )
