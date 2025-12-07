@@ -55,10 +55,10 @@ class FrontierExplorerNode(Node):
         self.get_logger().info("Frontier explorer node started")
 
     def get_robot_pose(self) -> Point:
-        """
-        Get current robot position via TF.
+        """Get current robot position via TF.
 
-        :return: Robot position as Point in world coordinates
+        Returns:
+            Robot position as Point in world coordinates.
         """
         try:
             transform = self.tf_buffer.lookup_transform(
@@ -70,22 +70,27 @@ class FrontierExplorerNode(Node):
             return None
 
     def euclidean_distance(self, p1: Point, p2: Point) -> float:
-        """
-        Calculate Euclidean distance between two points.
+        """Calculate Euclidean distance between two points.
 
-        :param p1: First point
-        :param p2: Second point
-        :return: Distance
+        Args:
+            p1: First point.
+            p2: Second point.
+
+        Returns:
+            Distance.
         """
         return math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2)
 
     def select_best_frontier(self, frontier_list: FrontierList) -> Frontier:
-        """
-        Select the best frontier based on distance and size.
+        """Select the best frontier based on distance and size.
+
         Strategy: minimize cost = distance / frontier.size
 
-        :param frontier_list: List of detected frontiers
-        :return: Best frontier to explore, or None if no frontiers
+        Args:
+            frontier_list: List of detected frontiers.
+
+        Returns:
+            Best frontier to explore, or None if no frontiers.
         """
         if not frontier_list.frontiers:
             return None
@@ -111,10 +116,10 @@ class FrontierExplorerNode(Node):
         return best_frontier
 
     def send_navigation_goal(self, frontier: Frontier):
-        """
-        Send navigation goal to Nav2 action server.
+        """Send navigation goal to Nav2 action server.
 
-        :param frontier: The frontier to navigate to
+        Args:
+            frontier: The frontier to navigate to.
         """
         if not self.nav_action_client.wait_for_server(timeout_sec=1.0):
             self.get_logger().warn("Nav2 action server not available")
@@ -136,10 +141,10 @@ class FrontierExplorerNode(Node):
         self.is_navigating = True
 
     def navigation_result_callback(self, future):
-        """
-        Handle navigation goal result.
+        """Handle navigation goal result.
 
-        :param future: Future containing the goal handle
+        Args:
+            future: Future containing the goal handle.
         """
         goal_handle = future.result()
         if not goal_handle.accepted:
@@ -155,10 +160,10 @@ class FrontierExplorerNode(Node):
         get_result_future.add_done_callback(self.navigation_get_result_callback)
 
     def navigation_get_result_callback(self, future):
-        """
-        Handle navigation result.
+        """Handle navigation result.
 
-        :param future: Future containing the result
+        Args:
+            future: Future containing the result.
         """
         result = future.result().result
         status = future.result().status
@@ -175,15 +180,13 @@ class FrontierExplorerNode(Node):
             self.get_logger().warn(f"Navigation goal ended with status: {status}")
 
     def publish_frontier_markers(self, frontier_list: FrontierList):
-        """
-        Publish visualization markers for frontiers.
+        """Publish visualization markers for frontiers.
+
         Note: Frontiers are already published as markers by frontier_server,
         but we can republish for visualization consistency.
-        """
-        """
-        Publish visualization markers for frontiers.
 
-        :param frontier_list: List of frontiers to visualize
+        Args:
+            frontier_list: List of frontiers to visualize.
         """
         marker_array = MarkerArray()
 

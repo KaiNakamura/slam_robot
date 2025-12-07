@@ -20,17 +20,20 @@ WALKABLE_THRESHOLD = 50
 def is_new_frontier_cell(
     mapdata: OccupancyGrid, cell: tuple[int, int], is_frontier: dict
 ) -> bool:
-    """
-    Check if a cell is a new frontier cell.
+    """Check if a cell is a new frontier cell.
+
     A frontier cell must be:
     1. Unknown (-1)
     2. Not already marked as frontier
     3. Have at least one free neighbor (4-connected, value < 50)
 
-    :param mapdata: The occupancy grid map data
-    :param cell: The cell coordinate as (x, y) tuple
-    :param is_frontier: Dictionary tracking which cells are already frontiers
-    :return: True if the cell is a new frontier cell, False otherwise
+    Args:
+        mapdata: The occupancy grid map data.
+        cell: The cell coordinate as (x, y) tuple.
+        is_frontier: Dictionary tracking which cells are already frontiers.
+
+    Returns:
+        True if the cell is a new frontier cell, False otherwise.
     """
     # Cell must be unknown and not already a frontier
     if not is_cell_in_bounds(mapdata, cell):
@@ -52,14 +55,17 @@ def is_new_frontier_cell(
 def build_new_frontier(
     mapdata: OccupancyGrid, initial_cell: tuple[int, int], is_frontier: dict
 ) -> Frontier:
-    """
-    Build a new frontier starting from an initial frontier cell.
+    """Build a new frontier starting from an initial frontier cell.
+
     Uses BFS (8-connected) to find all connected frontier cells.
 
-    :param mapdata: The occupancy grid map data
-    :param initial_cell: The initial frontier cell coordinate
-    :param is_frontier: Dictionary tracking which cells are frontiers
-    :return: A Frontier message with size and centroid
+    Args:
+        mapdata: The occupancy grid map data.
+        initial_cell: The initial frontier cell coordinate.
+        is_frontier: Dictionary tracking which cells are frontiers.
+
+    Returns:
+        A Frontier message with size and centroid.
     """
     # Initialize frontier fields
     size = 1
@@ -101,8 +107,7 @@ def detect_frontiers(
     start_pos: tuple[int, int],
     min_size: int = MIN_FRONTIER_SIZE,
 ) -> FrontierList:
-    """
-    Detect frontiers in the map using BFS-based exploration.
+    """Detect frontiers in the map using BFS-based exploration.
 
     Algorithm:
     1. Initialize BFS queue with start_pos (robot position in grid coordinates)
@@ -114,10 +119,13 @@ def detect_frontiers(
          - If neighbor is unknown (-1) and is new frontier cell: build frontier
     4. Return FrontierList with all frontiers >= min_size
 
-    :param mapdata: The occupancy grid map data
-    :param start_pos: The robot position in grid coordinates as (x, y) tuple
-    :param min_size: Minimum frontier size to include (default: 8)
-    :return: A FrontierList containing all detected frontiers
+    Args:
+        mapdata: The occupancy grid map data.
+        start_pos: The robot position in grid coordinates as (x, y) tuple.
+        min_size: Minimum frontier size to include (default: 8).
+
+    Returns:
+        A FrontierList containing all detected frontiers.
     """
     # Create queue for breadth-first search
     queue = []
