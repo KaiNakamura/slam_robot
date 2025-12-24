@@ -1,8 +1,3 @@
-"""
-Frontier Server Node
-Publishes frontier detection results on a topic.
-"""
-
 import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import OccupancyGrid
@@ -10,7 +5,7 @@ from visualization_msgs.msg import MarkerArray, Marker
 from geometry_msgs.msg import Point, Quaternion
 from std_msgs.msg import Empty
 from tf2_ros import TransformListener, Buffer
-from slam_robot.frontier_detection import detect_frontiers
+from slam_robot.frontier_detection import MIN_FRONTIER_SIZE, detect_frontiers
 from slam_robot.frontier_utils import world_to_grid
 
 
@@ -72,7 +67,9 @@ class FrontierServerNode(Node):
             return
 
         # Detect frontiers
-        frontier_list = detect_frontiers(self.current_map, robot_pos_grid, min_size=8)
+        frontier_list = detect_frontiers(
+            self.current_map, robot_pos_grid, min_size=MIN_FRONTIER_SIZE
+        )
 
         # Convert to MarkerArray for publishing
         marker_array = MarkerArray()

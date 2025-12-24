@@ -1,8 +1,3 @@
-"""
-Frontier Explorer Node
-Autonomously explores the environment by navigating to frontiers.
-"""
-
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
@@ -11,7 +6,7 @@ from nav2_msgs.action import NavigateToPose
 from visualization_msgs.msg import MarkerArray, Marker
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from tf2_ros import TransformListener, Buffer
-from slam_robot.msg import Frontier, FrontierList  # Keep for internal use
+from slam_robot.msg import Frontier, FrontierList
 import math
 
 
@@ -84,8 +79,6 @@ class FrontierExplorerNode(Node):
     def select_best_frontier(self, frontier_list: FrontierList) -> Frontier:
         """Select the best frontier based on distance and size.
 
-        Strategy: minimize cost = distance / frontier.size
-
         Args:
             frontier_list: List of detected frontiers.
 
@@ -95,15 +88,16 @@ class FrontierExplorerNode(Node):
         if not frontier_list.frontiers:
             return None
 
-        robot_pos = self.get_robot_pose()
-        if robot_pos is None:
-            return frontier_list.frontiers[0]  # Fallback to first frontier
+        robot_pose = self.get_robot_pose()
+        if robot_pose is None:
+            # If no robot pose, fallback to first frontier
+            return frontier_list.frontiers[0]
 
         best_frontier = None
         best_cost = float("inf")
 
         for frontier in frontier_list.frontiers:
-            distance = self.euclidean_distance(robot_pos, frontier.centroid)
+            distance = self.euclidean_distance(robot_pose, frontier.centroid)
             if frontier.size > 0:
                 cost = distance / frontier.size
             else:

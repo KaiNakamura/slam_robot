@@ -14,13 +14,13 @@ Install:
 
 Also:
 
-```bash
+```sh
 sudo apt install ros-jazzy-nav2-route
 ```
 
 ## Configuration Files
 
-```bash
+```sh
 # Copy Nav2 parameters
 cp /opt/ros/jazzy/share/nav2_bringup/params/nav2_params.yaml config/
 
@@ -32,9 +32,9 @@ cp /opt/ros/jazzy/share/slam_toolbox/config/mapper_params_online_async.yaml conf
 
 Build and launch the system:
 
-```bash
+```sh
 colcon build --packages-select slam_robot
-source install/setup.bash
+source install/setup.sh
 ros2 launch slam_robot bringup.launch.py
 ```
 
@@ -42,7 +42,7 @@ ros2 launch slam_robot bringup.launch.py
 
 If you need to manually shut down the system, use these commands:
 
-```bash
+```sh
 # Kill ros2 launch processes
 pkill -f "ros2 launch"
 
@@ -59,7 +59,7 @@ pkill -f "rviz2"
 
 Or use ros2 lifecycle commands to gracefully shut down Nav2 nodes:
 
-```bash
+```sh
 # Shutdown Nav2 nodes
 ros2 lifecycle set /controller_server shutdown
 ros2 lifecycle set /planner_server shutdown

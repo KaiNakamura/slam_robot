@@ -1,10 +1,11 @@
 """
 Utility functions for grid operations and map manipulation.
-Adapted from RBE3002 PathPlanner class.
 """
 
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Point
+
+FREE_THRESHOLD = 50
 
 
 def grid_to_index(mapdata: OccupancyGrid, p: tuple[int, int]) -> int:
@@ -85,72 +86,82 @@ def is_cell_in_bounds(mapdata: OccupancyGrid, p: tuple[int, int]) -> bool:
     return True
 
 
-def is_cell_walkable(mapdata: OccupancyGrid, p: tuple[int, int]) -> bool:
-    """Check if a cell is free and walkable.
+def is_cell_free(mapdata: OccupancyGrid, p: tuple[int, int]) -> bool:
+    """Check if a cell is free.
 
-    A cell is walkable if it is within bounds and has value < 50.
+    A cell is free if it is within bounds and has value < FREE_THRESHOLD.
 
     Args:
         mapdata: The occupancy grid map data.
         p: The cell coordinate as (x, y) tuple.
 
     Returns:
-        True if the cell is walkable, False otherwise.
+        True if the cell is free, False otherwise.
     """
     if not is_cell_in_bounds(mapdata, p):
         return False
 
-    WALKABLE_THRESHOLD = 50
-    return get_cell_value(mapdata, p) < WALKABLE_THRESHOLD
+    return get_cell_value(mapdata, p) < FREE_THRESHOLD
 
 
-def neighbors_of_4(
-    mapdata: OccupancyGrid, p: tuple[int, int], must_be_walkable: bool = True
+def get_neighbors(
+    mapdata: OccupancyGrid,
+    p: tuple[int, int],
+    directions: list[tuple[int, int]],
+    must_be_free: bool = True,
+) -> list[tuple[int, int]]:
+    """Helper for getting neighbors with given directions.
+
+    Args:
+        mapdata: The occupancy grid map data.
+        p: The cell coordinate as (x, y) tuple.
+        directions: List of direction offsets as (dx, dy) tuples.
+        must_be_free: If True, only return free neighbors. If False, return all in-bounds neighbors.
+
+    Returns:
+        List of neighbor coordinates.
+    """
+    neighbors = []
+    for direction in directions:
+        candidate = (p[0] + direction[0], p[1] + direction[1])
+        if must_be_free:
+            if is_cell_free(mapdata, candidate):
+                neighbors.append(candidate)
+        else:
+            if is_cell_in_bounds(mapdata, candidate):
+                neighbors.append(candidate)
+    return neighbors
+
+
+def get_neighbors_of_4(
+    mapdata: OccupancyGrid, p: tuple[int, int], must_be_free: bool = True
 ) -> list[tuple[int, int]]:
     """Get 4-connected neighbors (up, down, left, right).
 
     Args:
         mapdata: The occupancy grid map data.
         p: The cell coordinate as (x, y) tuple.
-        must_be_walkable: If True, only return walkable neighbors. If False, return all in-bounds neighbors.
+        must_be_free: If True, only return free neighbors. If False, return all in-bounds neighbors.
 
     Returns:
         List of neighbor coordinates.
     """
     directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-    neighbors = []
-    for direction in directions:
-        candidate = (p[0] + direction[0], p[1] + direction[1])
-        if must_be_walkable:
-            if is_cell_walkable(mapdata, candidate):
-                neighbors.append(candidate)
-        else:
-            if is_cell_in_bounds(mapdata, candidate):
-                neighbors.append(candidate)
-    return neighbors
+    return get_neighbors(mapdata, p, directions, must_be_free)
 
 
-def neighbors_of_8(
-    mapdata: OccupancyGrid, p: tuple[int, int], must_be_walkable: bool = True
+def get_neighbors_of_8(
+    mapdata: OccupancyGrid, p: tuple[int, int], must_be_free: bool = True
 ) -> list[tuple[int, int]]:
     """Get 8-connected neighbors (includes diagonals).
 
     Args:
         mapdata: The occupancy grid map data.
         p: The cell coordinate as (x, y) tuple.
-        must_be_walkable: If True, only return walkable neighbors. If False, return all in-bounds neighbors.
+        must_be_free: If True, only return free neighbors. If False, return all in-bounds neighbors.
 
     Returns:
         List of neighbor coordinates.
     """
     directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
-    neighbors = []
-    for direction in directions:
-        candidate = (p[0] + direction[0], p[1] + direction[1])
-        if must_be_walkable:
-            if is_cell_walkable(mapdata, candidate):
-                neighbors.append(candidate)
-        else:
-            if is_cell_in_bounds(mapdata, candidate):
-                neighbors.append(candidate)
-    return neighbors
+    return get_neighbors(mapdata, p, directions, must_be_free)
