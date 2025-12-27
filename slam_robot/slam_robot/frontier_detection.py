@@ -5,7 +5,7 @@ Frontier detection algorithm using BFS-based exploration.
 from collections import deque
 
 from nav_msgs.msg import OccupancyGrid
-from slam_robot.msg import Frontier, FrontierList
+from slam_robot_interfaces.msg import Frontier, FrontierList
 from slam_robot.frontier_utils import (
     FREE_THRESHOLD,
     get_cell_value,

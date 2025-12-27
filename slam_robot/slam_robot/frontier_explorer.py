@@ -1,12 +1,12 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
-from std_msgs.msg import Empty
 from nav2_msgs.action import NavigateToPose
 from visualization_msgs.msg import MarkerArray, Marker
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from tf2_ros import TransformListener, Buffer
-from slam_robot.msg import Frontier, FrontierList
+from slam_robot_interfaces.srv import GetFrontiers
+from slam_robot_interfaces.msg import Frontier, FrontierList
 import math
 
 
@@ -16,15 +16,10 @@ class FrontierExplorerNode(Node):
     def __init__(self):
         super().__init__("frontier_explorer")
 
-        # Publisher to trigger frontier detection
-        self.trigger_publisher = self.create_publisher(Empty, "/get_frontiers", 10)
+        # Service client for frontier detection
+        self.get_frontiers_client = self.create_client(GetFrontiers, "/get_frontiers")
 
-        # Subscriber for frontiers (MarkerArray format)
-        self.frontiers_subscriber = self.create_subscription(
-            MarkerArray, "/frontiers", self.frontiers_callback, 10
-        )
-
-        # Store latest frontiers (as FrontierList for compatibility)
+        # Store latest frontiers
         self.latest_frontiers = FrontierList()
 
         # Action client
@@ -176,9 +171,6 @@ class FrontierExplorerNode(Node):
     def publish_frontier_markers(self, frontier_list: FrontierList):
         """Publish visualization markers for frontiers.
 
-        Note: Frontiers are already published as markers by frontier_server,
-        but we can republish for visualization consistency.
-
         Args:
             frontier_list: List of frontiers to visualize.
         """
@@ -215,31 +207,17 @@ class FrontierExplorerNode(Node):
 
         self.marker_publisher.publish(marker_array)
 
-    def frontiers_callback(self, msg: MarkerArray):
-        """Handle incoming frontier list (MarkerArray format)."""
-        # Convert MarkerArray to FrontierList
-        frontier_list = FrontierList()
-        for marker in msg.markers:
-            if marker.ns == "frontiers" and marker.action == Marker.ADD:
-                frontier = Frontier()
-                frontier.size = int(marker.scale.x)  # Size stored in scale.x
-                frontier.centroid = marker.pose.position
-                frontier_list.frontiers.append(frontier)
-        self.latest_frontiers = frontier_list
+    def frontiers_service_callback(self, future):
+        """Handle GetFrontiers service response."""
+        try:
+            response = future.result()
+            self.latest_frontiers = response.frontiers
 
-    def explore_callback(self):
-        """Main exploration loop callback."""
-        if not self.is_navigating:
-            # Trigger frontier detection
-            self.trigger_publisher.publish(Empty())
+            # Publish markers for visualization
+            self.publish_frontier_markers(self.latest_frontiers)
 
-            # Use the latest frontiers we received
-            frontier_list = self.latest_frontiers
-
-            # Publish markers
-            self.publish_frontier_markers(frontier_list)
-
-            if not frontier_list.frontiers:
+            # Process frontiers (select best, navigate, etc.)
+            if not self.latest_frontiers.frontiers:
                 self.no_frontiers_count += 1
                 self.get_logger().info(
                     f"No frontiers found ({self.no_frontiers_count}/30)"
@@ -250,20 +228,32 @@ class FrontierExplorerNode(Node):
                     self.get_logger().info(
                         "Exploration complete: No frontiers found for 30 seconds"
                     )
-                    # Could shutdown here if desired
                     return
             else:
                 # Reset counter
                 self.no_frontiers_count = 0
 
                 # Select best frontier
-                best_frontier = self.select_best_frontier(frontier_list)
+                best_frontier = self.select_best_frontier(self.latest_frontiers)
                 if best_frontier:
                     # Wait for action client to be ready
                     if self.nav_action_client.wait_for_server(timeout_sec=0.5):
                         self.send_navigation_goal(best_frontier)
                     else:
                         self.get_logger().warn("Nav2 action server not ready")
+        except Exception as e:
+            self.get_logger().error(f"Service call failed: {e}")
+
+    def explore_callback(self):
+        """Main exploration loop callback."""
+        if not self.is_navigating:
+            # Call service to get frontiers
+            if self.get_frontiers_client.wait_for_service(timeout_sec=0.5):
+                request = GetFrontiers.Request()
+                future = self.get_frontiers_client.call_async(request)
+                future.add_done_callback(self.frontiers_service_callback)
+            else:
+                self.get_logger().warn("Frontier service not available")
 
 
 def main(args=None):
