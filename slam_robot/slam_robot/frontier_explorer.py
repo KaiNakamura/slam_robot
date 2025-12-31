@@ -62,6 +62,8 @@ class FrontierExplorerNode(Node):
     def euclidean_distance(self, p1: Point, p2: Point) -> float:
         """Calculate Euclidean distance between two points.
 
+        TODO: Probably a better way to do this?
+
         Args:
             p1: First point.
             p2: Second point.
@@ -71,8 +73,42 @@ class FrontierExplorerNode(Node):
         """
         return math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2)
 
+    def compute_frontier_cost(
+        self,
+        frontier: Frontier,
+        robot_pose: Point,
+        distance_weight: float = 1.0,
+        size_weight: float = 1.0,
+        min_distance: float = 0.5,
+    ) -> float:
+        """Compute cost for a frontier (lower is better).
+
+        TODO: Refactor all constants into a parameter file.
+
+        Args:
+            frontier: The frontier to evaluate.
+            robot_pose: Current robot position in world coordinates.
+            distance_weight: Weight for distance factor.
+            size_weight: Weight for size factor.
+            min_distance: Minimum distance threshold in meters.
+
+        Returns:
+            Cost value (lower is better).
+        """
+        distance = self.euclidean_distance(robot_pose, frontier.centroid)
+
+        # Reject frontiers with no size
+        if frontier.size <= 0:
+            return float("inf")
+
+        # Reject frontiers that are too close
+        if distance < min_distance:
+            return float("inf")
+
+        return (distance_weight * distance) / (size_weight * frontier.size)
+
     def select_best_frontier(self, frontier_list: FrontierList) -> Frontier:
-        """Select the best frontier based on distance and size.
+        """Select the best frontier using cost function.
 
         Args:
             frontier_list: List of detected frontiers.
@@ -85,24 +121,14 @@ class FrontierExplorerNode(Node):
 
         robot_pose = self.get_robot_pose()
         if robot_pose is None:
-            # If no robot pose, fallback to first frontier
+            # Fallback to first frontier if pose unavailable
             return frontier_list.frontiers[0]
 
-        best_frontier = None
-        best_cost = float("inf")
-
-        for frontier in frontier_list.frontiers:
-            distance = self.euclidean_distance(robot_pose, frontier.centroid)
-            if frontier.size > 0:
-                cost = distance / frontier.size
-            else:
-                cost = distance
-
-            if cost < best_cost:
-                best_cost = cost
-                best_frontier = frontier
-
-        return best_frontier
+        # Select best frontier (lowest cost)
+        return min(
+            frontier_list.frontiers,
+            key=lambda f: self.compute_frontier_cost(f, robot_pose),
+        )
 
     def send_navigation_goal(self, frontier: Frontier):
         """Send navigation goal to Nav2 action server.
@@ -217,6 +243,7 @@ class FrontierExplorerNode(Node):
             self.publish_frontier_markers(self.latest_frontiers)
 
             # Process frontiers (select best, navigate, etc.)
+            # TODO: Remove hardcoded values
             if not self.latest_frontiers.frontiers:
                 self.no_frontiers_count += 1
                 self.get_logger().info(
