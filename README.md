@@ -20,6 +20,8 @@ sudo apt install ros-jazzy-nav2-route
 
 ## Configuration Files
 
+The files under `slam_robot/config` control some of the configuration settings necessary to run the demo. These files do not need to be modified, but the steps below show how they were created.
+
 ```sh
 # Copy Nav2 parameters
 cp /opt/ros/jazzy/share/nav2_bringup/params/nav2_params.yaml config/
@@ -27,6 +29,12 @@ cp /opt/ros/jazzy/share/nav2_bringup/params/nav2_params.yaml config/
 # Copy SLAM Toolbox parameters
 cp /opt/ros/jazzy/share/slam_toolbox/config/mapper_params_online_async.yaml config/slam_toolbox_params.yaml
 ```
+
+After copying Nav2 parameters, ensure `enable_stamped_cmd_vel: true` is set in these sections of `nav2_params.yaml`:
+
+- **`controller_server`** section - Required for controller to publish `TwistStamped` messages
+- **`velocity_smoother`** section - Required to receive and forward `TwistStamped` messages
+- **`collision_monitor`** section - Required for compatibility with Gazebo's `ros_gz_bridge`, which expects `TwistStamped` messages
 
 ## Running
 

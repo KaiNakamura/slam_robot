@@ -73,6 +73,7 @@ controller_server:
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
     failure_tolerance: 0.3
+    enable_stamped_cmd_vel: true  # Required to match velocity_smoother's TwistStamped expectation
     progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
     controller_plugins: ["FollowPath"]
@@ -369,6 +370,7 @@ velocity_smoother:
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 1.0
+    enable_stamped_cmd_vel: true  # Required to match controller_server output and collision_monitor input
 
 collision_monitor:
   ros__parameters:
@@ -381,6 +383,7 @@ collision_monitor:
     source_timeout: 1.0
     base_shift_correction: True
     stop_pub_timeout: 2.0
+    enable_stamped_cmd_vel: true  # Required for ros_gz_bridge compatibility (expects TwistStamped)
     # Polygons represent zone around the robot for "stop", "slowdown" and "limit" action types,
     # and robot footprint for "approach" action type.
     polygons: ["FootprintApproach"]
