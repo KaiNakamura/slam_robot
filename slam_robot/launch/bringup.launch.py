@@ -56,6 +56,12 @@ def generate_launch_description():
                 name="frontier_explorer",
                 output="screen",
             ),
+            Node(
+                package="slam_robot",
+                executable="frontier_visualizer",
+                name="frontier_visualizer",
+                output="screen",
+            ),
         ]
     )
 

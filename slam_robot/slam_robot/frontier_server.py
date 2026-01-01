@@ -2,14 +2,13 @@ import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import OccupancyGrid
 from tf2_ros import TransformListener, Buffer
-from slam_robot_interfaces.srv import GetFrontiers
 from slam_robot_interfaces.msg import FrontierList
 from slam_robot.frontier_detection import MIN_FRONTIER_SIZE, detect_frontiers
 from slam_robot.frontier_utils import world_to_grid
 
 
 class FrontierServerNode(Node):
-    """Node that publishes frontier detection results."""
+    """Node that publishes frontiers on map updates."""
 
     def __init__(self):
         super().__init__("frontier_server")
@@ -19,31 +18,18 @@ class FrontierServerNode(Node):
             OccupancyGrid, "/map", self.map_callback, 10
         )
 
-        # Service server for frontier detection
-        self.get_frontiers_service = self.create_service(
-            GetFrontiers, "/get_frontiers", self.get_frontiers_callback
-        )
+        # Publishers
+        self.frontiers_publisher = self.create_publisher(FrontierList, "/frontiers", 10)
 
         # TF listener
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
-        # State
-        self.current_map = None
-
         self.get_logger().info("Frontier server node started")
 
     def map_callback(self, msg: OccupancyGrid):
-        """Store the latest map data."""
-        self.current_map = msg
+        """On map updates, detect frontiers and publish."""
         self.get_logger().debug(f"Received map: {msg.info.width}x{msg.info.height}")
-
-    def get_frontiers_callback(self, request, response):
-        """Handle GetFrontiers service request."""
-        # Check if map available
-        if self.current_map is None:
-            response.frontiers = FrontierList()
-            return response
 
         # Get robot pose via TF
         try:
@@ -51,23 +37,19 @@ class FrontierServerNode(Node):
                 "map", "base_footprint", rclpy.time.Time()
             )
             robot_pos_world = transform.transform.translation
-            robot_pos_grid = world_to_grid(self.current_map, robot_pos_world)
+            robot_pos_grid = world_to_grid(msg, robot_pos_world)
         except Exception as e:
             self.get_logger().debug(f"Failed to get robot pose: {e}")
-            response.frontiers = FrontierList()
-            return response
+            return
 
         # Detect frontiers
         frontier_list = detect_frontiers(
-            self.current_map, robot_pos_grid, min_size=MIN_FRONTIER_SIZE
+            msg, robot_pos_grid, min_size=MIN_FRONTIER_SIZE
         )
 
-        # Return frontiers in response
-        response.frontiers = frontier_list
-        self.get_logger().info(
-            f"Service returning {len(frontier_list.frontiers)} frontiers"
-        )
-        return response
+        # Publish frontiers
+        self.frontiers_publisher.publish(frontier_list)
+        self.get_logger().debug(f"Published {len(frontier_list.frontiers)} frontiers")
 
 
 def main(args=None):

@@ -29,6 +29,7 @@ setup(
         "console_scripts": [
             "frontier_server = slam_robot.frontier_server:main",
             "frontier_explorer = slam_robot.frontier_explorer:main",
+            "frontier_visualizer = slam_robot.frontier_visualizer:main",
         ],
     },
 )

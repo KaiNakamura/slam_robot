@@ -60,12 +60,15 @@ def build_new_frontier(
         is_frontier: Dictionary tracking which cells are frontiers.
 
     Returns:
-        A Frontier message with size and centroid.
+        A Frontier message.
     """
     # Initialize frontier fields
     size = 1
     centroid_x = initial_cell[0]
     centroid_y = initial_cell[1]
+
+    # Collect cell world coordinates
+    cells = [grid_to_world(mapdata, initial_cell)]
 
     # Create queue for breadth-first search
     queue = deque()
@@ -85,6 +88,10 @@ def build_new_frontier(
                 size += 1
                 centroid_x += neighbor[0]
                 centroid_y += neighbor[1]
+
+                # Append cell
+                cells.append(grid_to_world(mapdata, neighbor))
+
                 queue.append(neighbor)
 
     # Calculate centroid by taking the average
@@ -94,7 +101,7 @@ def build_new_frontier(
     # Convert centroid to world coordinates
     centroid = grid_to_world(mapdata, (int(centroid_x), int(centroid_y)))
 
-    return Frontier(size=size, centroid=centroid)
+    return Frontier(size=size, centroid=centroid, cells=cells)
 
 
 def detect_frontiers(
