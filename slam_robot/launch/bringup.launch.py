@@ -34,10 +34,8 @@ def generate_launch_description():
         [nav2_bringup_pkg, "launch", "navigation_launch.py"]
     )
 
-    # Nav2 RViz launch file
-    nav2_rviz_launch_file_path = PathJoinSubstitution(
-        [nav2_bringup_pkg, "launch", "rviz_launch.py"]
-    )
+    # Custom RViz config
+    rviz_config_path = PathJoinSubstitution([slam_robot_pkg, "rviz", "slam_robot.rviz"])
 
     # Frontier nodes with SetParameter + GroupAction pattern
     # This ensures use_sim_time is properly set before nodes start
@@ -92,10 +90,14 @@ def generate_launch_description():
                     ),
                 }.items(),
             ),
-            # Launch Nav2 RViz
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(nav2_rviz_launch_file_path),
-                launch_arguments={"use_sim_time": use_sim_time}.items(),
+            # Launch RViz with custom config
+            Node(
+                package="rviz2",
+                executable="rviz2",
+                name="rviz2",
+                arguments=["-d", rviz_config_path],
+                parameters=[{"use_sim_time": use_sim_time}],
+                output="screen",
             ),
             # Frontier exploration nodes (with SetParameter + GroupAction)
             frontier_nodes_group,
