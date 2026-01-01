@@ -6,11 +6,10 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(geometry_msgs REQUIRED)
 
-# Generate interfaces (messages and services)
+# Generate interfaces
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Frontier.msg"
   "msg/FrontierList.msg"
-  "srv/GetFrontiers.srv"
   DEPENDENCIES geometry_msgs
 )
 
