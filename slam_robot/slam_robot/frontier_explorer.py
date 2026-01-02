@@ -49,7 +49,7 @@ class FrontierExplorerNode(Node):
 
         # Async path computation state
         self.pending_path_count = 0
-        self.path_distances = {}  # frontier_id -> distance
+        self.path_lengths = {}  # frontier_id -> length
         self.path_timers = {}  # frontier_id -> Timer
         self.current_frontiers = None
         self.robot_pose = None
@@ -84,7 +84,7 @@ class FrontierExplorerNode(Node):
         if not self.compute_path_client.wait_for_server(timeout_sec=0.1):
             # Server not available, mark as unreachable
             frontier_id = id(frontier)
-            self.path_distances[frontier_id] = float("inf")
+            self.path_lengths[frontier_id] = float("inf")
             self.pending_path_count -= 1
             if self.pending_path_count == 0:
                 self.select_and_navigate()
@@ -124,7 +124,7 @@ class FrontierExplorerNode(Node):
             if frontier_id in self.path_timers:
                 self.path_timers[frontier_id].cancel()
                 del self.path_timers[frontier_id]
-            self.path_distances[frontier_id] = float("inf")
+            self.path_lengths[frontier_id] = float("inf")
             self.pending_path_count -= 1
             if self.pending_path_count == 0:
                 self.select_and_navigate()
@@ -146,9 +146,9 @@ class FrontierExplorerNode(Node):
         frontier_id = id(frontier)
 
         # Check if already timed out (timer may have fired)
-        if frontier_id in self.path_distances and self.path_distances[
-            frontier_id
-        ] == float("inf"):
+        if frontier_id in self.path_lengths and self.path_lengths[frontier_id] == float(
+            "inf"
+        ):
             return  # Already handled by timeout
 
         # Cancel timer
@@ -162,21 +162,21 @@ class FrontierExplorerNode(Node):
 
         # Check path validity
         if len(path) < 2:
-            self.path_distances[frontier_id] = float("inf")
+            self.path_lengths[frontier_id] = float("inf")
             self.pending_path_count -= 1
             if self.pending_path_count == 0:
                 self.select_and_navigate()
             return
 
-        # Compute path distance (sum distances between consecutive poses)
-        total_distance = 0.0
+        # Compute path length (sum distances between consecutive poses)
+        total_length = 0.0
         for i in range(len(path) - 1):
             p1 = path[i].pose.position
             p2 = path[i + 1].pose.position
-            total_distance += math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2)
+            total_length += math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2)
 
-        # Store distance
-        self.path_distances[frontier_id] = total_distance
+        # Store length
+        self.path_lengths[frontier_id] = total_length
         self.pending_path_count -= 1
         if self.pending_path_count == 0:
             self.select_and_navigate()
@@ -188,13 +188,13 @@ class FrontierExplorerNode(Node):
             frontier_id: ID of the frontier (passed via lambda).
         """
         # Check if already completed (result callback may have fired first)
-        if frontier_id in self.path_distances and self.path_distances[
-            frontier_id
-        ] != float("inf"):
+        if frontier_id in self.path_lengths and self.path_lengths[frontier_id] != float(
+            "inf"
+        ):
             return  # Already completed
 
-        # Set distance to inf
-        self.path_distances[frontier_id] = float("inf")
+        # Set length to inf
+        self.path_lengths[frontier_id] = float("inf")
 
         # Remove timer from dict
         if frontier_id in self.path_timers:
@@ -210,17 +210,17 @@ class FrontierExplorerNode(Node):
         if not self.current_frontiers:
             return
 
-        # Find best frontier (lowest distance)
+        # Find best frontier (shortest length)
         best_frontier = min(
             self.current_frontiers,
-            key=lambda f: self.path_distances.get(id(f), float("inf")),
+            key=lambda f: self.path_lengths.get(id(f), float("inf")),
         )
 
-        # Get best distance
-        best_distance = self.path_distances.get(id(best_frontier), float("inf"))
+        # Get best length
+        best_length = self.path_lengths.get(id(best_frontier), float("inf"))
 
         # Check if all paths failed
-        if best_distance == float("inf"):
+        if best_length == float("inf"):
             self.get_logger().warn(
                 "All path computations failed or timed out, skipping this batch"
             )
@@ -317,7 +317,7 @@ class FrontierExplorerNode(Node):
 
         # Reset state at beginning for clean state management
         self.pending_path_count = 0
-        self.path_distances = {}
+        self.path_lengths = {}
         # Cancel and clear all timers
         for timer in self.path_timers.values():
             timer.cancel()
@@ -351,7 +351,7 @@ class FrontierExplorerNode(Node):
             # Initialize path computation state
             self.current_frontiers = msg.frontiers
             self.robot_pose = robot_pose
-            self.path_distances = {}
+            self.path_lengths = {}
             self.pending_path_count = len(msg.frontiers)
 
             # Start parallel path computation for all frontiers

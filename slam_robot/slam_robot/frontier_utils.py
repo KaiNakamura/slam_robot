@@ -2,8 +2,11 @@
 Utility functions for grid operations and map manipulation.
 """
 
+import math
+
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Point
+from slam_robot_interfaces.msg import Frontier
 
 FREE_THRESHOLD = 50
 
@@ -165,3 +168,37 @@ def get_neighbors_of_8(
     """
     directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
     return get_neighbors(mapdata, p, directions, must_be_free)
+
+
+def snap_centroid_to_frontier_cell(frontier: Frontier) -> Frontier:
+    """Snap centroid to the nearest frontier cell.
+
+    This ensures the centroid is always an actual frontier cell, which helps
+    avoid edge cases where the centroid ends up far away from the frontier.
+
+    Args:
+        frontier: The frontier to adjust.
+
+    Returns:
+        The frontier with adjusted centroid (modified in place).
+    """
+    if not frontier.cells:
+        return frontier
+
+    # Store original centroid
+    original_centroid = frontier.centroid
+
+    # Find frontier cell closest to original centroid
+    min_dist = float("inf")
+    nearest_cell = frontier.cells[0]
+
+    for cell in frontier.cells:
+        dx = cell.x - original_centroid.x
+        dy = cell.y - original_centroid.y
+        dist = math.sqrt(dx * dx + dy * dy)
+        if dist < min_dist:
+            min_dist = dist
+            nearest_cell = cell
+
+    frontier.centroid = nearest_cell
+    return frontier

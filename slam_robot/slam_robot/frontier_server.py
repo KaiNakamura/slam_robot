@@ -1,10 +1,11 @@
 import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import OccupancyGrid
+from geometry_msgs.msg import Point
 from tf2_ros import TransformListener, Buffer
 from slam_robot_interfaces.msg import FrontierList
 from slam_robot.frontier_detection import MIN_FRONTIER_SIZE, detect_frontiers
-from slam_robot.frontier_utils import world_to_grid
+from slam_robot.frontier_utils import world_to_grid, snap_centroid_to_frontier_cell
 
 
 class FrontierServerNode(Node):
@@ -36,7 +37,8 @@ class FrontierServerNode(Node):
             transform = self.tf_buffer.lookup_transform(
                 "map", "base_footprint", rclpy.time.Time()
             )
-            robot_pos_world = transform.transform.translation
+            translation = transform.transform.translation
+            robot_pos_world = Point(x=translation.x, y=translation.y, z=translation.z)
             robot_pos_grid = world_to_grid(msg, robot_pos_world)
         except Exception as e:
             self.get_logger().debug(f"Failed to get robot pose: {e}")
@@ -46,6 +48,10 @@ class FrontierServerNode(Node):
         frontier_list = detect_frontiers(
             msg, robot_pos_grid, min_size=MIN_FRONTIER_SIZE
         )
+
+        # Snap each frontier centroid to nearest frontier cell
+        for frontier in frontier_list.frontiers:
+            snap_centroid_to_frontier_cell(frontier)
 
         # Publish frontiers
         self.frontiers_publisher.publish(frontier_list)
