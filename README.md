@@ -65,17 +65,64 @@ pkill -9 -f "ruby.*gz"
 pkill -f "rviz2"
 ```
 
-Or use ros2 lifecycle commands to gracefully shut down Nav2 nodes:
+## ROS Structure
 
-```sh
-# Shutdown Nav2 nodes
-ros2 lifecycle set /controller_server shutdown
-ros2 lifecycle set /planner_server shutdown
-ros2 lifecycle set /recoveries_server shutdown
-ros2 lifecycle set /bt_navigator shutdown
-ros2 lifecycle set /waypoint_follower shutdown
-ros2 lifecycle set /lifecycle_manager_navigation shutdown
-```
+### robot (Gazebo / Turtlebot)
+
+- Publishes
+  - /scan
+  - /odom
+  - /tf - odom -> base_footprint -> base_link -> laser
+- Subscribes
+  - /cmd_vel
+
+### slam_toolbox
+
+- Subscribes (everything from robot)
+  - /scan
+  - /tf
+  - /odom
+- Publishes
+  - /map
+  - /tf - map -> odom
+
+### Nav2
+
+- Subscribes
+  - /map - From slam_toolbox
+  - /scan - For obstacle avoidance
+  - /tf - For robot pose
+- Publishes
+  - /cmd_vel
+  - /global_costmap/costmap - For RViz
+  - /local_costmap/costmap - For RViz
+- Actions
+  - /navigate_to_pose
+
+### frontier_server
+
+- Subscribes
+  - /map
+  - /tf - For robot pose
+- Publishes
+  - /frontiers - Custom `FrontierList` msg
+
+### frontier_explorer
+
+- Subscribes
+  - /frontiers
+  - /tf - Via tf2 TransformListener
+- Actions
+  - /navigate_to_pose - Calls Nav2
+
+### frontier_visualizer
+
+- Subscribes
+  - /frontiers
+  - /map - For resolution
+- Publishes
+  - /frontier_centroids - MarkerArray
+  - /frontier_cells - GridCells
 
 ## Docker
 
