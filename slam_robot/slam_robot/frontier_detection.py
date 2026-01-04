@@ -7,7 +7,6 @@ from collections import deque
 from nav_msgs.msg import OccupancyGrid
 from slam_robot_interfaces.msg import Frontier, FrontierList
 from slam_robot.frontier_utils import (
-    FREE_THRESHOLD,
     get_cell_value,
     grid_to_world,
     get_neighbors_of_4,
@@ -15,11 +14,12 @@ from slam_robot.frontier_utils import (
     is_cell_in_bounds,
 )
 
-MIN_FRONTIER_SIZE = 8
-
 
 def is_new_frontier_cell(
-    mapdata: OccupancyGrid, cell: tuple[int, int], is_frontier: dict
+    mapdata: OccupancyGrid,
+    cell: tuple[int, int],
+    is_frontier: dict,
+    free_threshold: int,
 ) -> bool:
     """Check if a cell is a new frontier cell.
 
@@ -27,6 +27,7 @@ def is_new_frontier_cell(
         mapdata: The occupancy grid map data.
         cell: The cell coordinate as (x, y) tuple.
         is_frontier: Dictionary tracking which cells are already frontiers.
+        free_threshold: Occupancy value threshold for free space (0-100).
 
     Returns:
         True if the cell is a new frontier cell, False otherwise.
@@ -43,14 +44,17 @@ def is_new_frontier_cell(
     # Check neighbors that are in bounds (not necessarily free)
     for neighbor in get_neighbors_of_4(mapdata, cell, must_be_free=False):
         neighbor_value = get_cell_value(mapdata, neighbor)
-        if neighbor_value >= 0 and neighbor_value < FREE_THRESHOLD:
+        if neighbor_value >= 0 and neighbor_value < free_threshold:
             return True
 
     return False
 
 
 def build_new_frontier(
-    mapdata: OccupancyGrid, initial_cell: tuple[int, int], is_frontier: dict
+    mapdata: OccupancyGrid,
+    initial_cell: tuple[int, int],
+    is_frontier: dict,
+    free_threshold: int,
 ) -> Frontier:
     """Build a new frontier starting from an initial frontier cell.
 
@@ -58,6 +62,7 @@ def build_new_frontier(
         mapdata: The occupancy grid map data.
         initial_cell: The initial frontier cell coordinate.
         is_frontier: Dictionary tracking which cells are frontiers.
+        free_threshold: Occupancy value threshold for free space (0-100).
 
     Returns:
         A Frontier message.
@@ -80,7 +85,7 @@ def build_new_frontier(
 
         # Use 8-connected neighbors, checking bounds but not requiring free space
         for neighbor in get_neighbors_of_8(mapdata, current, must_be_free=False):
-            if is_new_frontier_cell(mapdata, neighbor, is_frontier):
+            if is_new_frontier_cell(mapdata, neighbor, is_frontier, free_threshold):
                 # Mark as frontier
                 is_frontier[neighbor] = True
 
@@ -107,7 +112,8 @@ def build_new_frontier(
 def detect_frontiers(
     mapdata: OccupancyGrid,
     start_pos: tuple[int, int],
-    min_size: int = MIN_FRONTIER_SIZE,
+    min_size: int,
+    free_threshold: int,
 ) -> FrontierList:
     """Detect frontiers in the map using BFS-based exploration.
 
@@ -115,6 +121,7 @@ def detect_frontiers(
         mapdata: The occupancy grid map data.
         start_pos: The robot position in grid coordinates as (x, y) tuple.
         min_size: Minimum frontier size to include.
+        free_threshold: Occupancy value threshold for free space (0-100).
 
     Returns:
         A FrontierList containing all detected frontiers meeting the size threshold.
@@ -133,17 +140,21 @@ def detect_frontiers(
 
     while queue:
         current = queue.popleft()
-        for neighbor in get_neighbors_of_4(mapdata, current):
+        for neighbor in get_neighbors_of_4(
+            mapdata, current, must_be_free=True, free_threshold=free_threshold
+        ):
             neighbor_value = get_cell_value(mapdata, neighbor)
             if neighbor_value >= 0 and neighbor not in visited:
                 visited[neighbor] = True
                 queue.append(neighbor)
-            elif is_new_frontier_cell(mapdata, neighbor, is_frontier):
+            elif is_new_frontier_cell(mapdata, neighbor, is_frontier, free_threshold):
                 # Mark as frontier
                 is_frontier[neighbor] = True
 
                 # Build new frontier
-                new_frontier = build_new_frontier(mapdata, neighbor, is_frontier)
+                new_frontier = build_new_frontier(
+                    mapdata, neighbor, is_frontier, free_threshold
+                )
                 if new_frontier.size >= min_size:
                     frontiers.append(new_frontier)
 

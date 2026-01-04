@@ -4,7 +4,7 @@ from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Point
 from tf2_ros import TransformListener, Buffer
 from slam_robot_interfaces.msg import FrontierList
-from slam_robot.frontier_detection import MIN_FRONTIER_SIZE, detect_frontiers
+from slam_robot.frontier_detection import detect_frontiers
 from slam_robot.frontier_utils import world_to_grid, snap_centroid_to_frontier_cell
 
 
@@ -14,13 +14,21 @@ class FrontierServerNode(Node):
     def __init__(self):
         super().__init__("frontier_server")
 
+        # Declare parameters
+        self.declare_parameter("min_frontier_size", 8)
+        self.declare_parameter("free_threshold", 50)
+
+        # Read parameters
+        self.min_frontier_size = self.get_parameter("min_frontier_size").value
+        self.free_threshold = self.get_parameter("free_threshold").value
+
         # Subscribers
         self.map_subscriber = self.create_subscription(
-            OccupancyGrid, "/map", self.map_callback, 10
+            OccupancyGrid, "/map", self.map_callback
         )
 
         # Publishers
-        self.frontiers_publisher = self.create_publisher(FrontierList, "/frontiers", 10)
+        self.frontiers_publisher = self.create_publisher(FrontierList, "/frontiers")
 
         # TF listener
         self.tf_buffer = Buffer()
@@ -46,7 +54,10 @@ class FrontierServerNode(Node):
 
         # Detect frontiers
         frontier_list = detect_frontiers(
-            msg, robot_pos_grid, min_size=MIN_FRONTIER_SIZE
+            msg,
+            robot_pos_grid,
+            min_size=self.min_frontier_size,
+            free_threshold=self.free_threshold,
         )
 
         # Snap each frontier centroid to nearest frontier cell

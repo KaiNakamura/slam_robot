@@ -18,7 +18,7 @@ class FrontierExplorerNode(Node):
 
         # Subscribe to frontiers topic
         self.frontiers_sub = self.create_subscription(
-            FrontierList, "/frontiers", self.frontiers_callback, 10
+            FrontierList, "/frontiers", self.frontiers_callback
         )
 
         # Callback group for action clients (allows reentrant calls)
@@ -44,7 +44,6 @@ class FrontierExplorerNode(Node):
 
         # State
         self.is_navigating = False
-        self.no_frontiers_count = 0
         self.current_goal_handle = None
 
         # Async path computation state
@@ -227,7 +226,7 @@ class FrontierExplorerNode(Node):
             return  # Skip batch, state will be reset at beginning of next frontiers_callback()
 
         # Valid path found, navigate
-        if self.nav_action_client.wait_for_server(timeout_sec=0.5):
+        if self.nav_action_client.wait_for_server(timeout_sec=1.0):
             self.send_navigation_goal(best_frontier)
 
     def send_navigation_goal(self, frontier: Frontier):
@@ -328,21 +327,7 @@ class FrontierExplorerNode(Node):
         if self.is_navigating:
             return  # Don't interrupt current navigation
 
-        # TODO: Remove hardcoded values
-        if not msg.frontiers:
-            self.no_frontiers_count += 1
-            self.get_logger().info(f"No frontiers found ({self.no_frontiers_count}/30)")
-
-            # Check termination condition
-            if self.no_frontiers_count >= 30:
-                self.get_logger().info(
-                    "Exploration complete: No frontiers found for 30 updates"
-                )
-                return
-        else:
-            # Reset counter
-            self.no_frontiers_count = 0
-
+        if msg.frontiers:
             # Get robot pose
             robot_pose = self.get_robot_pose()
             if robot_pose is None:

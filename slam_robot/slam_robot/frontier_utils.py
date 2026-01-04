@@ -8,8 +8,6 @@ from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Point
 from slam_robot_interfaces.msg import Frontier
 
-FREE_THRESHOLD = 50
-
 
 def grid_to_index(mapdata: OccupancyGrid, p: tuple[int, int]) -> int:
     """Returns the index corresponding to the given (x,y) coordinates in the occupancy grid.
@@ -89,14 +87,17 @@ def is_cell_in_bounds(mapdata: OccupancyGrid, p: tuple[int, int]) -> bool:
     return True
 
 
-def is_cell_free(mapdata: OccupancyGrid, p: tuple[int, int]) -> bool:
+def is_cell_free(
+    mapdata: OccupancyGrid, p: tuple[int, int], free_threshold: int
+) -> bool:
     """Check if a cell is free.
 
-    A cell is free if it is within bounds and has value < FREE_THRESHOLD.
+    A cell is free if it is within bounds and has value < free_threshold.
 
     Args:
         mapdata: The occupancy grid map data.
         p: The cell coordinate as (x, y) tuple.
+        free_threshold: Occupancy value threshold for free space (0-100).
 
     Returns:
         True if the cell is free, False otherwise.
@@ -104,7 +105,7 @@ def is_cell_free(mapdata: OccupancyGrid, p: tuple[int, int]) -> bool:
     if not is_cell_in_bounds(mapdata, p):
         return False
 
-    return get_cell_value(mapdata, p) < FREE_THRESHOLD
+    return get_cell_value(mapdata, p) < free_threshold
 
 
 def get_neighbors(
@@ -112,6 +113,7 @@ def get_neighbors(
     p: tuple[int, int],
     directions: list[tuple[int, int]],
     must_be_free: bool = True,
+    free_threshold: int = None,
 ) -> list[tuple[int, int]]:
     """Helper for getting neighbors with given directions.
 
@@ -120,6 +122,7 @@ def get_neighbors(
         p: The cell coordinate as (x, y) tuple.
         directions: List of direction offsets as (dx, dy) tuples.
         must_be_free: If True, only return free neighbors. If False, return all in-bounds neighbors.
+        free_threshold: Occupancy value threshold for free space (0-100). Required if must_be_free=True.
 
     Returns:
         List of neighbor coordinates.
@@ -128,7 +131,11 @@ def get_neighbors(
     for direction in directions:
         candidate = (p[0] + direction[0], p[1] + direction[1])
         if must_be_free:
-            if is_cell_free(mapdata, candidate):
+            if free_threshold is None:
+                raise ValueError(
+                    "free_threshold must be provided when must_be_free=True"
+                )
+            if is_cell_free(mapdata, candidate, free_threshold):
                 neighbors.append(candidate)
         else:
             if is_cell_in_bounds(mapdata, candidate):
@@ -137,7 +144,10 @@ def get_neighbors(
 
 
 def get_neighbors_of_4(
-    mapdata: OccupancyGrid, p: tuple[int, int], must_be_free: bool = True
+    mapdata: OccupancyGrid,
+    p: tuple[int, int],
+    must_be_free: bool = True,
+    free_threshold: int = None,
 ) -> list[tuple[int, int]]:
     """Get 4-connected neighbors (up, down, left, right).
 
@@ -145,16 +155,20 @@ def get_neighbors_of_4(
         mapdata: The occupancy grid map data.
         p: The cell coordinate as (x, y) tuple.
         must_be_free: If True, only return free neighbors. If False, return all in-bounds neighbors.
+        free_threshold: Occupancy value threshold for free space (0-100). Required if must_be_free=True.
 
     Returns:
         List of neighbor coordinates.
     """
     directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-    return get_neighbors(mapdata, p, directions, must_be_free)
+    return get_neighbors(mapdata, p, directions, must_be_free, free_threshold)
 
 
 def get_neighbors_of_8(
-    mapdata: OccupancyGrid, p: tuple[int, int], must_be_free: bool = True
+    mapdata: OccupancyGrid,
+    p: tuple[int, int],
+    must_be_free: bool = True,
+    free_threshold: int = None,
 ) -> list[tuple[int, int]]:
     """Get 8-connected neighbors (includes diagonals).
 
@@ -162,12 +176,13 @@ def get_neighbors_of_8(
         mapdata: The occupancy grid map data.
         p: The cell coordinate as (x, y) tuple.
         must_be_free: If True, only return free neighbors. If False, return all in-bounds neighbors.
+        free_threshold: Occupancy value threshold for free space (0-100). Required if must_be_free=True.
 
     Returns:
         List of neighbor coordinates.
     """
     directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
-    return get_neighbors(mapdata, p, directions, must_be_free)
+    return get_neighbors(mapdata, p, directions, must_be_free, free_threshold)
 
 
 def snap_centroid_to_frontier_cell(frontier: Frontier) -> Frontier:

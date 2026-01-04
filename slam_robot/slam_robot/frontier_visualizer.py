@@ -14,17 +14,15 @@ class FrontierVisualizerNode(Node):
 
         # Subscribers
         self.frontiers_sub = self.create_subscription(
-            FrontierList, "/frontiers", self.frontiers_callback, 10
+            FrontierList, "/frontiers", self.frontiers_callback
         )
         self.map_sub = self.create_subscription(
-            OccupancyGrid, "/map", self.map_callback, 10
+            OccupancyGrid, "/map", self.map_callback
         )
 
         # Publishers
-        self.centroids_pub = self.create_publisher(
-            MarkerArray, "/frontier_centroids", 10
-        )
-        self.cells_pub = self.create_publisher(GridCells, "/frontier_cells", 10)
+        self.centroids_pub = self.create_publisher(MarkerArray, "/frontier_centroids")
+        self.cells_pub = self.create_publisher(GridCells, "/frontier_cells")
 
         # State
         self.map_resolution = None
